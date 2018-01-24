@@ -35,7 +35,7 @@ import io.socket.emitter.Emitter;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String SIGNALING_URI = "http://your.ip.here:7000";
+    private static final String SIGNALING_URI = "http://192.168.0.166:7000";
     private static final String VIDEO_TRACK_ID = "video1";
     private static final String AUDIO_TRACK_ID = "audio1";
     private static final String LOCAL_STREAM_ID = "stream1";

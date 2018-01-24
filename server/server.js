@@ -1,6 +1,16 @@
 var socketIO = require('socket.io');
 var server = require('http').createServer().listen(7000, '0.0.0.0');
 var io = socketIO.listen(server);
+// var app = require('express')();
+// var http = require('http').Server(app);
+
+// app.get('/', function(req, res){
+//   res.send('<h1>Hello world</h1>');
+// });
+
+// http.listen(3000, function(){
+//   console.log('listening on *:3000');
+// });
 
 // Super simple server:
 //  * One room only. 

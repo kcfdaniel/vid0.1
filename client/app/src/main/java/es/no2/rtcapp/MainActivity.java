@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String OFFER = "offer";
     private static final String ANSWER = "answer";
     private static final String CANDIDATE = "candidate";
+    private static final String USERNAMES = "usernames";
 
     private PeerConnectionFactory peerConnectionFactory;
     private VideoSource localVideoSource;
@@ -98,12 +99,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
 
-    public void onConnect(View button) {
-        if (peerConnection != null)
-            return;
 
+
+        //onConnect codes
         ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
         iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
 
@@ -114,12 +113,39 @@ public class MainActivity extends AppCompatActivity {
 
         peerConnection.addStream(localMediaStream);
 
+        //from socket.on(CREATEOFFER, new Emitter.Listener() {
         try {
             socket = IO.socket(SIGNALING_URI);
+            socket.connect();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("sendname", "Client 1");
+            socket.emit("sendname", obj);
+            Log.d("Creation", "sending out my name");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        socket.on(USERNAMES, new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+                Log.d("Creation", "received username list: " + args[0]);
+            }
+
+        });
+
+        try {
             socket.on(CREATEOFFER, new Emitter.Listener() {
 
                 @Override
                 public void call(Object... args) {
+                    Log.d("Creation", "create offer 2nd time!!");
+
                     createOffer = true;
                     peerConnection.createOffer(sdpObserver, new MediaConstraints());
                 }
@@ -129,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void call(Object... args) {
                     try {
+                        Log.d("Creation", "received offer!!");
                         JSONObject obj = (JSONObject) args[0];
                         SessionDescription sdp = new SessionDescription(SessionDescription.Type.OFFER,
                                 obj.getString(SDP));
@@ -144,6 +171,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void call(Object... args) {
                     try {
+                        Log.d("Creation", "received answer!!");
+
                         JSONObject obj = (JSONObject) args[0];
                         SessionDescription sdp = new SessionDescription(SessionDescription.Type.ANSWER,
                                 obj.getString(SDP));
@@ -158,6 +187,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void call(Object... args) {
                     try {
+                        Log.d("Creation", "received candidate!!");
+
                         JSONObject obj = (JSONObject) args[0];
                         peerConnection.addIceCandidate(new IceCandidate(obj.getString(SDP_MID),
                                 obj.getInt(SDP_M_LINE_INDEX),
@@ -168,11 +199,21 @@ public class MainActivity extends AppCompatActivity {
                 }
 
             });
-
-            socket.connect();
-        } catch (URISyntaxException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void onConnect(View button) {
+//        if (peerConnection != null)
+//            return;
+
+        //create offer
+        createOffer = true;
+        peerConnection.createOffer(sdpObserver, new MediaConstraints());
+
+        Log.d("Creation", "create offer!!");
+
     }
 
     SdpObserver sdpObserver = new SdpObserver() {
@@ -181,6 +222,7 @@ public class MainActivity extends AppCompatActivity {
             peerConnection.setLocalDescription(sdpObserver, sessionDescription);
             try {
                 JSONObject obj = new JSONObject();
+//                Log.d("Creation", "type is: " + sessionDescription.description.getClass().toString());
                 obj.put(SDP, sessionDescription.description);
                 if (createOffer) {
                     socket.emit(OFFER, obj);
@@ -211,12 +253,12 @@ public class MainActivity extends AppCompatActivity {
     PeerConnection.Observer peerConnectionObserver = new PeerConnection.Observer() {
         @Override
         public void onSignalingChange(PeerConnection.SignalingState signalingState) {
-            Log.d("RTCAPP", "onSignalingChange:" + signalingState.toString());
+//            Log.d("RTCAPP", "onSignalingChange:" + signalingState.toString());
         }
 
         @Override
         public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
-            Log.d("RTCAPP", "onIceConnectionChange:" + iceConnectionState.toString());
+//            Log.d("RTCAPP", "onIceConnectionChange:" + iceConnectionState.toString());
         }
 
         @Override
@@ -232,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onIceCandidate(IceCandidate iceCandidate) {
             try {
+                Log.d("Creation", "send candidate!!");
                 JSONObject obj = new JSONObject();
                 obj.put(SDP_MID, iceCandidate.sdpMid);
                 obj.put(SDP_M_LINE_INDEX, iceCandidate.sdpMLineIndex);
